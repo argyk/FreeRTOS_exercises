@@ -62,6 +62,8 @@ QueueHandle_t q_data;
 
 uint8_t userData;
 
+state_t currState = sMainMenu;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,30 +128,30 @@ int main(void)
   NVIC_SetPriorityGrouping(0);  // same as NVIC_PRIORITYGROUP_4
   SEGGER_SYSVIEW_Conf();
   SEGGER_SYSVIEW_Start();
-//
-//  status = xTaskCreate(menu_task, "Menu Task", 128, NULL, 1, &handle_menu_task);
-//  configASSERT(status == pdPASS);
-//
-  status = xTaskCreate(led_task, "LED Task", 128, NULL, 1, &handle_led_task);
+
+  status = xTaskCreate(menu_task, "Menu Task", 128, NULL, 2, &handle_menu_task);
   configASSERT(status == pdPASS);
-//
-//  status = xTaskCreate(rtc_task, "RTC Task", 128, NULL, 1, &handle_rtc_task);
-//  configASSERT(status == pdPASS);
-//
-//  status = xTaskCreate(print_task, "Print Task", 128, NULL, 1, &handle_print_task);
-//  configASSERT(status == pdPASS);
-//
-//  status = xTaskCreate(cmd_handler_task, "Command Handler Task", 128, NULL, 1, &handle_cmd_task);
-//  configASSERT(status == pdPASS);
-//
-//  q_print = xQueueCreate(10 , sizeof(size_t));
-//  configASSERT(q_print != NULL);
-//
-//  q_data = xQueueCreate(10 , sizeof(char));
-//  configASSERT(q_data != NULL);
-//
-//  HAL_UART_Receive_IT(&huart2, &userData, 1);
-//
+
+  status = xTaskCreate(led_task, "LED Task", 512, NULL, 1, &handle_led_task);
+  configASSERT(status == pdPASS);
+
+  status = xTaskCreate(rtc_task, "RTC Task", 128, NULL, 1, &handle_rtc_task);
+  configASSERT(status == pdPASS);
+
+  status = xTaskCreate(print_task, "Print Task", 128, NULL, 1, &handle_print_task);
+  configASSERT(status == pdPASS);
+
+  status = xTaskCreate(cmd_handler_task, "Command Handler Task", 128, NULL, 1, &handle_cmd_task);
+  configASSERT(status == pdPASS);
+
+  q_print = xQueueCreate(10 , sizeof(size_t));
+  configASSERT(q_print != NULL);
+
+  q_data = xQueueCreate(10 , sizeof(char));
+  configASSERT(q_data != NULL);
+
+  HAL_UART_Receive_IT(&huart2, &userData, 1);
+
   vTaskStartScheduler();
 
 //  char data[] = "Hello World !\r\n";
@@ -225,10 +227,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	uint8_t data;
 
 	if (! xQueueIsQueueFullFromISR(q_data)){
-		taskENTER_CRITICAL();
 		status = xQueueSendToBackFromISR(q_data, &userData, NULL);
 		configASSERT(status == pdPASS);
-		taskEXIT_CRITICAL();
 	}
 	else {
 		if (userData == '\n'){
@@ -242,6 +242,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		//Notify cmd task
 		xTaskNotifyFromISR(handle_cmd_task, 0, eNoAction, NULL);
 	}
+
 	HAL_UART_Receive_IT(&huart2, &userData, 1);
 
 
