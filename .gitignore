@@ -1,7 +1,12 @@
 Debug/
+Release/
 
-.cproject
-.project
-.mxproject
-.settings/
 .metadata/
+
+# Auto-generated files
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
