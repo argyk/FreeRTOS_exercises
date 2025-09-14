@@ -27,9 +27,8 @@ void menu_task(void *param){
 
 	const char* msg_invalid =
 	    "=========================\r\n"
-	    "|         Menu          |\r\n"
+	    "|    Invalid message    |\r\n"
 	    "=========================\r\n"
-	    "Invalid message !!\r\n"
 	    "Please select option 0, 1 or 2.\r\n";
 
 	while(1){
@@ -67,33 +66,59 @@ void menu_task(void *param){
 }
 
 void led_task(void *param){
-//	const char* msg_led =
-//	    "=========================\r\n"
-//	    "|       LED Effect       |\r\n"
-//	    "=========================\r\n"
-//	    "Please select an option:\r\n"
-//	    "------> none\r\n"
-//	    "------> e1\r\n"
-//	    "------> e2\r\n"
-//	    "------> e3\r\n"
-//	    "------> e4\r\n"
-//	    "Enter your choice here : ";
+	const char* led_menu =
+	    "=========================\r\n"
+	    "|       LED Effect      |\r\n"
+	    "=========================\r\n"
+	    "Please select an option:\r\n"
+	    "------> none\r\n"
+	    "------> e1\r\n"
+	    "------> e2\r\n"
+	    "------> e3\r\n"
+	    "------> e4\r\n"
+	    "Enter your choice here : ";
+	const char* msg_led_invalid =
+	    "=========================\r\n"
+	    "|    Invalid message    |\r\n"
+	    "=========================\r\n"
+	    "Please select option none, e1, e2, e3 or e4.\r\n";
 
-//	uint8_t data;
-//	char output[50];
+	uint32_t cmd_addr;
+	command_t* cmd;
 
 	while(1){
-
-//		HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
-//		vTaskDelay(500);
-//   	    HAL_UART_Transmit(&huart2, (uint8_t*) msg_led, strlen(msg_led), HAL_MAX_DELAY);
-//   	    HAL_UART_Receive(&huart2, &data, 1, HAL_MAX_DELAY);
-//
-//   	    snprintf(output, sizeof(output), "\r\n\r\nReceived char: %c !!\r\n Very nice !\r\n\r\n", data);
-//
-//   	    HAL_UART_Transmit(&huart2, (uint8_t*) output, strlen(output), HAL_MAX_DELAY);
-//   	    strcpy(output, "");
+		//Wait notify
 		xTaskNotifyWait(0,0,NULL,portMAX_DELAY);
+		//print LED menu
+		xQueueSend(q_print, &led_menu, portMAX_DELAY);
+		// wait for command
+		xTaskNotifyWait(0,0,&cmd_addr,portMAX_DELAY);
+		cmd = (command_t*) cmd_addr;
+
+		//Select effect
+
+		if (cmd->len <= 4){
+			if (!strcmp((char*)cmd->payload, "none")){  //returns 0 if strings are equal
+				led_effect_stop();
+			}else if (!strcmp((char*)cmd->payload, "e1")){
+				led_effect(1);
+			}else if (!strcmp((char*)cmd->payload, "e2")){
+				led_effect(2);
+			}else if (!strcmp((char*)cmd->payload, "e3")){
+				led_effect(3);
+			}else if (!strcmp((char*)cmd->payload, "e4")){
+				led_effect(4);
+			}else{
+				xQueueSend(q_print, &msg_led_invalid, portMAX_DELAY);
+			}
+		}else {
+			xQueueSend(q_print, &msg_led_invalid, portMAX_DELAY);
+
+			currState = sMainMenu;
+			xTaskNotify(handle_menu_task,0,eNoAction);
+		}
+
+
 
 	}
 }

@@ -165,8 +165,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  HAL_UART_Transmit(&huart2, (void*) data, strlen(data), HAL_MAX_DELAY);
-//	  HAL_Delay(1000);
+
   }
   /* USER CODE END 3 */
 }
@@ -224,7 +223,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
 	BaseType_t status;
-	uint8_t data;
+	uint8_t temp;
 
 	if (! xQueueIsQueueFullFromISR(q_data)){
 		status = xQueueSendToBackFromISR(q_data, &userData, NULL);
@@ -232,17 +231,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 	else {
 		if (userData == '\n'){
-			//need to overwrite the last character to \n
-			data = '\n';
-			xQueueOverwriteFromISR(q_data, (void*)&data, NULL);
-
+			//need to force the last character to \n
+			xQueueReceiveFromISR(q_data, (void*)&temp, NULL);
+			xQueueSendToBackFromISR(q_data, &userData, NULL);
 		}
 	}
 	if (userData == '\n'){
 		//Notify cmd task
 		xTaskNotifyFromISR(handle_cmd_task, 0, eNoAction, NULL);
 	}
-
+	//echo char (non blocking transmit through Interrupt mode
+	HAL_UART_Transmit_IT(&huart2, (uint8_t*) &userData, strlen((char*)&userData));
+	//Receive next character
 	HAL_UART_Receive_IT(&huart2, &userData, 1);
 
 

@@ -60,4 +60,10 @@ extern state_t currState;
 void process_command(command_t *cmd);
 int extract_command(command_t *cmd);
 
+void led_effect_stop(void);
+void led_effect(int n);
+
+void turn_on_all_leds(void);
+
+
 #endif /* INC_TASK_HANDLER_H_ */
