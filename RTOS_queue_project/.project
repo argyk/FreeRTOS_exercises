@@ -33,13 +33,7 @@
 		<link>
 			<name>common</name>
 			<type>2</type>
-			<location>C:/Users/argyris/Documents/FreeRTOS/freeRTOS_workspace/common</location>
+			<location>C:/Users/argyris/Documents/FreeRTOS/stm32f3_freeRTOS_workspace/common</location>
 		</link>
 	</linkedResources>
-	<variableList>
-		<variable>
-			<name>MIDDLEWARE_PATH</name>
-			<value>file:/C:/Users/argyris/Documents/FreeRTOS/freeRTOS_workspace/common</value>
-		</variable>
-	</variableList>
 </projectDescription>
