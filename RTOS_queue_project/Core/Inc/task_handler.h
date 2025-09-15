@@ -10,6 +10,7 @@
 
 #include "stm32f3xx.h"
 #include "usart.h"
+#include "rtc.h"
 #include "main.h"
 
 #include <string.h>

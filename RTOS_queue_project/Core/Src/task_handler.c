@@ -91,7 +91,7 @@ void led_task(void *param){
 		//Wait notify
 		xTaskNotifyWait(0,0,NULL,portMAX_DELAY);
 		//print LED menu
-		xQueueSend(q_print, &led_menu, portMAX_DELAY);
+		xQueueSendToBack(q_print, &led_menu, portMAX_DELAY);
 		// wait for command
 		xTaskNotifyWait(0,0,&cmd_addr,portMAX_DELAY);
 		cmd = (command_t*) cmd_addr;
@@ -122,8 +122,135 @@ void led_task(void *param){
 }
 
 void rtc_task(void *param){
+	const char* rtc_menu_1 =
+	    "\r\n\r\n"
+		"=========================\r\n"
+	    "|          RTC          |\r\n"
+	    "=========================\r\n";
+	const char* rtc_menu_2 =
+	    "\r\n\r\n"
+	    "Please select an option:\r\n"
+	    "Set time ------------> 0\r\n"
+	    "Set date ------------> 1\r\n"
+	    "Show date and time --> 2\r\n"
+		"Exit ----------------> 3\r\n"
+	    "Enter your choice here : ";
+
+	const char* msg_rtc_invalid =
+	    "\r\n\r\n"
+		"=========================\r\n"
+	    "|    Invalid message    |\r\n"
+	    "=========================\r\n"
+	    "Going back to main menu.\r\n";
+
+	const char* msg_set_time =
+	    "\r\n\r\n"
+		"=========================\r\n"
+	    "|    Time configure     |\r\n"
+	    "=========================\r\n"
+	    "Please insert the time.\r\n";
+
+	const char* msg_set_time_HH =
+	    "\r\n"
+	    "Hours (HH): \r\n";
+	const char* msg_set_time_MM =
+	    "\r\n"
+	    "Minutes (MM): \r\n";
+	const char* msg_set_time_SS =
+	    "\r\n"
+	    "Seconds (SS): \r\n";
+	const char* msg_set_time_format =
+	    "\r\n"
+	    "Insert 0 for AM and 1 for PM: \r\n";
+
+	const char* msg_set_date =
+	    "\r\n\r\n"
+		"=========================\r\n"
+	    "|    Date configure     |\r\n"
+	    "=========================\r\n"
+	    "Please insert the date.\r\n";
+
+	const char* msg_set_date_DD =
+	    "\r\n"
+	    "Day (DD): \r\n";
+	const char* msg_set_date_MM =
+	    "\r\n"
+	    "Month (MM): \r\n";
+	const char* msg_set_date_YYYY =
+	    "\r\n"
+	    "Year (YYYY): \r\n";
+
+	uint32_t cmd_addr;
+	command_t* cmd;
+	uint8_t option;
+
+
+
 	while(1){
 		xTaskNotifyWait(0,0,NULL,portMAX_DELAY);
+		//print RTC menu
+		xQueueSendToBack(q_print, &rtc_menu_1, portMAX_DELAY);
+		show_time_date();
+		xQueueSendToBack(q_print, &rtc_menu_2, portMAX_DELAY);
+
+
+
+		while (currState != sMainMenu){
+			// wait for command
+			xTaskNotifyWait(0,0,&cmd_addr,portMAX_DELAY);
+			cmd = (command_t*) cmd_addr;
+
+			switch (currState){
+			case (sRtcMenu):
+				if (cmd->len ==1){
+					option = cmd->payload[0] -48; //Convert ASCII to number
+
+					switch(option){
+					case 0:
+						currState = sRtcTimeConfig;
+						xQueueSendToBack(q_print, &msg_set_time, portMAX_DELAY);
+						xQueueSendToBack(q_print, &msg_set_time_HH, portMAX_DELAY);
+						break;
+					case 1:
+						currState = sRtcDateConfig;
+						xQueueSendToBack(q_print, &msg_set_date, portMAX_DELAY);
+						xQueueSendToBack(q_print, &msg_set_date_DD, portMAX_DELAY);
+						break;
+					case 2:
+						currState = sRtcReport;
+						break;
+					case 3:
+						currState = sMainMenu;
+						break;
+					default:
+						currState = sMainMenu;
+						xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+
+					}
+				}
+				else {
+					xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+
+				}
+
+				break;
+			case (sRtcTimeConfig):
+				break;
+			case (sRtcDateConfig):
+				break;
+			case (sRtcReport):
+				break;
+			default:
+				xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+				break;
+			}
+
+
+
+		}
+
+		currState = sMainMenu;
+		xTaskNotify(handle_menu_task,0,eNoAction);
 
 	}
 }

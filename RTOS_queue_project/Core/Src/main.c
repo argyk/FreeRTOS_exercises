@@ -135,10 +135,10 @@ int main(void)
   status = xTaskCreate(menu_task, "Menu Task", 128, NULL, 2, &handle_menu_task);
   configASSERT(status == pdPASS);
 
-  status = xTaskCreate(led_task, "LED Task", 512, NULL, 1, &handle_led_task);
+  status = xTaskCreate(led_task, "LED Task", 256, NULL, 1, &handle_led_task);
   configASSERT(status == pdPASS);
 
-  status = xTaskCreate(rtc_task, "RTC Task", 128, NULL, 1, &handle_rtc_task);
+  status = xTaskCreate(rtc_task, "RTC Task", 256, NULL, 1, &handle_rtc_task);
   configASSERT(status == pdPASS);
 
   status = xTaskCreate(print_task, "Print Task", 128, NULL, 1, &handle_print_task);
