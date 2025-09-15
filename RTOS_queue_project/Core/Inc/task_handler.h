@@ -18,6 +18,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "timers.h"
 
 
 
@@ -35,6 +36,8 @@ extern TaskHandle_t handle_cmd_task;
 
 extern QueueHandle_t q_print;
 extern QueueHandle_t q_data;
+
+extern TimerHandle_t handle_led_timer[4];
 
 extern uint8_t userData;
 
@@ -64,6 +67,15 @@ void led_effect_stop(void);
 void led_effect(int n);
 
 void turn_on_all_leds(void);
+void turn_off_all_leds(void);
+void turn_on_even_leds(void);
+void turn_on_odd_leds(void);
+
+void led_effect_callback(TimerHandle_t xTimer);
+void LED_effect1(void);
+void LED_effect2(void);
+void LED_effect3(void);
+void LED_effect4(void);
 
 
 #endif /* INC_TASK_HANDLER_H_ */

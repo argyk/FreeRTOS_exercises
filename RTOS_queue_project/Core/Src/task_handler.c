@@ -16,7 +16,7 @@ void menu_task(void *param){
 	int option;
 
 	const char* msg_menu =
-	    "=========================\r\n"
+	    "\r\n\r\n=========================\r\n"
 	    "|         Menu          |\r\n"
 	    "=========================\r\n"
 	    "Please select an option:\r\n"
@@ -26,7 +26,7 @@ void menu_task(void *param){
 	    "Enter your choice here : ";
 
 	const char* msg_invalid =
-	    "=========================\r\n"
+	    "\r\n\r\n=========================\r\n"
 	    "|    Invalid message    |\r\n"
 	    "=========================\r\n"
 	    "Please select option 0, 1 or 2.\r\n";
@@ -67,7 +67,7 @@ void menu_task(void *param){
 
 void led_task(void *param){
 	const char* led_menu =
-	    "=========================\r\n"
+	    "\r\n\r\n=========================\r\n"
 	    "|       LED Effect      |\r\n"
 	    "=========================\r\n"
 	    "Please select an option:\r\n"
@@ -76,12 +76,13 @@ void led_task(void *param){
 	    "------> e2\r\n"
 	    "------> e3\r\n"
 	    "------> e4\r\n"
+		"Press any other key to exit.\r\n"
 	    "Enter your choice here : ";
 	const char* msg_led_invalid =
-	    "=========================\r\n"
+	    "\r\n\r\n=========================\r\n"
 	    "|    Invalid message    |\r\n"
 	    "=========================\r\n"
-	    "Please select option none, e1, e2, e3 or e4.\r\n";
+	    "Going back to main menu.\r\n";
 
 	uint32_t cmd_addr;
 	command_t* cmd;
@@ -113,12 +114,9 @@ void led_task(void *param){
 			}
 		}else {
 			xQueueSend(q_print, &msg_led_invalid, portMAX_DELAY);
-
-			currState = sMainMenu;
-			xTaskNotify(handle_menu_task,0,eNoAction);
 		}
-
-
+		currState = sMainMenu;
+		xTaskNotify(handle_menu_task,0,eNoAction);
 
 	}
 }

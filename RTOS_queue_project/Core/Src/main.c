@@ -29,6 +29,7 @@
 #include "SEGGER_SYSVIEW.h"
 #include "task.h"
 #include "queue.h"
+#include "timers.h"
 #include "task_handler.h"
 /* USER CODE END Includes */
 
@@ -59,6 +60,8 @@ TaskHandle_t handle_cmd_task;
 
 QueueHandle_t q_print;
 QueueHandle_t q_data;
+
+TimerHandle_t handle_led_timer[4];
 
 uint8_t userData;
 
@@ -150,6 +153,16 @@ int main(void)
   q_data = xQueueCreate(10 , sizeof(char));
   configASSERT(q_data != NULL);
 
+
+  //Create SW timers for LED effects
+
+  for (int i=0; i<4; i++) {
+	  handle_led_timer[i] = xTimerCreate("led timer", pdMS_TO_TICKS(500), pdTRUE, (void*)(i+1), led_effect_callback);
+	  configASSERT(handle_led_timer[i] != NULL);
+  }
+
+
+
   HAL_UART_Receive_IT(&huart2, &userData, 1);
 
   vTaskStartScheduler();
@@ -217,6 +230,32 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+
+void led_effect_callback(TimerHandle_t xTimer){
+
+	int id;
+	id = (uint32_t) pvTimerGetTimerID(xTimer);
+
+	switch (id){
+	case 1:
+		LED_effect1();
+		break;
+	case 2:
+		LED_effect2();
+		break;
+	case 3:
+		LED_effect3();
+		break;
+	case 4:
+		LED_effect4();
+		break;
+
+	}
+
+}
+
+
 
 //This executes in interrupt context when receive from UART is completed.
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
