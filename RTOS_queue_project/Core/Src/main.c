@@ -62,6 +62,7 @@ QueueHandle_t q_print;
 QueueHandle_t q_data;
 
 TimerHandle_t handle_led_timer[4];
+TimerHandle_t handle_rtc_timer;
 
 uint8_t userData;
 
@@ -138,7 +139,7 @@ int main(void)
   status = xTaskCreate(led_task, "LED Task", 256, NULL, 1, &handle_led_task);
   configASSERT(status == pdPASS);
 
-  status = xTaskCreate(rtc_task, "RTC Task", 256, NULL, 1, &handle_rtc_task);
+  status = xTaskCreate(rtc_task, "RTC Task", 768, NULL, 1, &handle_rtc_task);
   configASSERT(status == pdPASS);
 
   status = xTaskCreate(print_task, "Print Task", 128, NULL, 1, &handle_print_task);
@@ -154,20 +155,19 @@ int main(void)
   configASSERT(q_data != NULL);
 
 
-  //Create SW timers for LED effects
+  //Create SW timers for LED effects and RTC reporting
 
   for (int i=0; i<4; i++) {
-	  handle_led_timer[i] = xTimerCreate("led timer", pdMS_TO_TICKS(500), pdTRUE, (void*)(i+1), led_effect_callback);
+	  handle_led_timer[i] = xTimerCreate("led_timer", pdMS_TO_TICKS(500), pdTRUE, (void*)(i+1), led_effect_callback);
 	  configASSERT(handle_led_timer[i] != NULL);
   }
 
-
+  handle_rtc_timer = xTimerCreate("rtc_report_timer", pdMS_TO_TICKS(1000), pdTRUE, 5, rtc_timer_callback);
+  configASSERT(handle_rtc_timer != NULL);
 
   HAL_UART_Receive_IT(&huart2, &userData, 1);
 
   vTaskStartScheduler();
-
-//  char data[] = "Hello World !\r\n";
 
   /* USER CODE END 2 */
 
@@ -253,6 +253,10 @@ void led_effect_callback(TimerHandle_t xTimer){
 
 	}
 
+}
+
+void rtc_timer_callback(TimerHandle_t xTimer){
+	show_time_date_itm();
 }
 
 

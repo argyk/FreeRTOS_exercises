@@ -39,6 +39,7 @@ extern QueueHandle_t q_print;
 extern QueueHandle_t q_data;
 
 extern TimerHandle_t handle_led_timer[4];
+extern TimerHandle_t handle_rtc_timer;
 
 extern uint8_t userData;
 
@@ -77,6 +78,10 @@ void LED_effect1(void);
 void LED_effect2(void);
 void LED_effect3(void);
 void LED_effect4(void);
+
+void rtc_timer_callback(TimerHandle_t xTimer);
+
+uint8_t get_number(command_t* cmd);
 
 
 #endif /* INC_TASK_HANDLER_H_ */

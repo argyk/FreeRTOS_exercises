@@ -32,6 +32,7 @@ extern "C" {
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task_handler.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -45,8 +46,11 @@ void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void show_time_date(void);
-void set_time(RTC_TimeTypeDef* time, uint8_t format);
+void show_time_date_itm(void);
+
+void set_time(RTC_TimeTypeDef* time);
 void set_date(RTC_DateTypeDef* date);
+int validate_rtc_data(RTC_TimeTypeDef* time, RTC_DateTypeDef* date);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

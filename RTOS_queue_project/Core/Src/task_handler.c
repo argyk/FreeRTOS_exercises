@@ -121,6 +121,20 @@ void led_task(void *param){
 	}
 }
 
+
+uint8_t get_number(command_t* cmd){
+	int value;
+
+	if (cmd->len == 2)
+		value = ( ((cmd->payload[0] - 48) * 10) + (cmd->payload[1] - 48));
+	else
+		value = cmd->payload[0] - 48;
+
+	return value;
+}
+
+
+
 void rtc_task(void *param){
 	const char* rtc_menu_1 =
 	    "\r\n\r\n"
@@ -132,7 +146,7 @@ void rtc_task(void *param){
 	    "Please select an option:\r\n"
 	    "Set time ------------> 0\r\n"
 	    "Set date ------------> 1\r\n"
-	    "Show date and time --> 2\r\n"
+	    "Enable reporting ----> 2\r\n"
 		"Exit ----------------> 3\r\n"
 	    "Enter your choice here : ";
 
@@ -152,16 +166,16 @@ void rtc_task(void *param){
 
 	const char* msg_set_time_HH =
 	    "\r\n"
-	    "Hours (HH): \r\n";
+	    "Hours (HH) (1-12): ";
 	const char* msg_set_time_MM =
 	    "\r\n"
-	    "Minutes (MM): \r\n";
+	    "Minutes (MM) (1-59): ";
 	const char* msg_set_time_SS =
 	    "\r\n"
-	    "Seconds (SS): \r\n";
+	    "Seconds (SS) (1-59): ";
 	const char* msg_set_time_format =
 	    "\r\n"
-	    "Insert 0 for AM and 1 for PM: \r\n";
+	    "Insert 0 for AM and 1 for PM: ";
 
 	const char* msg_set_date =
 	    "\r\n\r\n"
@@ -170,19 +184,50 @@ void rtc_task(void *param){
 	    "=========================\r\n"
 	    "Please insert the date.\r\n";
 
+	const char* msg_set_date_DW =
+	    "\r\n"
+	    "Day of week (DW) (1-7 sun:1): ";
 	const char* msg_set_date_DD =
 	    "\r\n"
-	    "Day (DD): \r\n";
+	    "Day (DD) (1-31): ";
 	const char* msg_set_date_MM =
 	    "\r\n"
-	    "Month (MM): \r\n";
-	const char* msg_set_date_YYYY =
+	    "Month (MM) (1-12): ";
+	const char* msg_set_date_YY =
 	    "\r\n"
-	    "Year (YYYY): \r\n";
+	    "Year (YY) (0-99): ";
+
+	const char* msg_set_time_success =
+		"\r\n"
+		"Time configured successfully!";
+	const char* msg_set_date_success =
+		"\r\n"
+		"Date configured successfully!";
+
+	const char* msg_enable_reporting =
+		"\r\n"
+		"Would you like to enable time & date reporting through ITM? (y/n) ";
 
 	uint32_t cmd_addr;
 	command_t* cmd;
 	uint8_t option;
+
+	RTC_TimeTypeDef time;
+	RTC_DateTypeDef date;
+	memset(&date, 0, sizeof(date));
+	memset(&time, 0, sizeof(time));
+
+	static uint8_t rtc_state = 0;
+
+#define DATE_DD   0
+#define DATE_MM   1
+#define DATE_YY   2
+#define DATE_DW   3
+
+#define TIME_AMPM  3
+#define TIME_SS	   2
+#define TIME_MM    1
+#define TIME_HH    0
 
 
 
@@ -199,7 +244,6 @@ void rtc_task(void *param){
 			// wait for command
 			xTaskNotifyWait(0,0,&cmd_addr,portMAX_DELAY);
 			cmd = (command_t*) cmd_addr;
-
 			switch (currState){
 			case (sRtcMenu):
 				if (cmd->len ==1){
@@ -218,6 +262,7 @@ void rtc_task(void *param){
 						break;
 					case 2:
 						currState = sRtcReport;
+						xQueueSendToBack(q_print, &msg_enable_reporting, portMAX_DELAY);
 						break;
 					case 3:
 						currState = sMainMenu;
@@ -229,16 +274,102 @@ void rtc_task(void *param){
 					}
 				}
 				else {
+					currState = sMainMenu;
 					xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
 
 				}
 
 				break;
 			case (sRtcTimeConfig):
+
+				switch(rtc_state){
+				case TIME_HH:
+					uint8_t hour = get_number(cmd);
+					time.Hours = hour;
+					rtc_state = TIME_MM;
+					xQueueSendToBack(q_print, &msg_set_time_MM, portMAX_DELAY);
+					break;
+
+				case TIME_MM:
+					uint8_t minutes = get_number(cmd);
+					time.Minutes = minutes;
+					rtc_state = TIME_SS;
+					xQueueSendToBack(q_print, &msg_set_time_SS, portMAX_DELAY);
+					break;
+				case TIME_SS:
+					uint8_t seconds = get_number(cmd);
+					time.Seconds = seconds;
+					rtc_state = TIME_AMPM;
+					xQueueSendToBack(q_print, &msg_set_time_format, portMAX_DELAY);
+					break;
+				case TIME_AMPM:
+					uint8_t format = get_number(cmd);
+					time.TimeFormat = format;
+
+					if (!validate_rtc_data(&time, NULL)){
+						set_time(&time);
+						xQueueSendToBack(q_print, &msg_set_time_success, portMAX_DELAY);
+						show_time_date();
+					} else
+						xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+
+					rtc_state = 0;
+					currState = sMainMenu;
+					break;
+				}
+
 				break;
 			case (sRtcDateConfig):
+
+				switch(rtc_state){
+				case DATE_DD:
+					uint8_t day = get_number(cmd);
+					date.Date = day;
+					rtc_state = DATE_MM;
+					xQueueSendToBack(q_print, &msg_set_date_MM, portMAX_DELAY);
+					break;
+
+				case DATE_MM:
+					uint8_t month = get_number(cmd);
+					date.Month = month;
+					rtc_state = DATE_YY;
+					xQueueSendToBack(q_print, &msg_set_date_YY, portMAX_DELAY);
+					break;
+				case DATE_YY:
+					uint8_t year = get_number(cmd);
+					date.Year = year;
+					rtc_state = DATE_DW;
+					xQueueSendToBack(q_print, &msg_set_date_DW, portMAX_DELAY);
+					break;
+				case DATE_DW:
+					uint8_t dayOfWeek = get_number(cmd);
+					date.WeekDay = dayOfWeek;
+
+					if (validate_rtc_data(NULL, &date)){
+						set_date(&date);
+						xQueueSendToBack(q_print, &msg_set_date_success, portMAX_DELAY);
+						show_time_date();
+					} else
+						xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+
+					rtc_state = 0;
+					currState = sMainMenu;
+					break;
+				}
+
 				break;
 			case (sRtcReport):
+				if (cmd->payload[0] == 'y'){
+					if (xTimerIsTimerActive(handle_rtc_timer) == pdFALSE)
+						xTimerStart(handle_rtc_timer, portMAX_DELAY);
+				}
+				else if (cmd->payload[0] == 'n'){
+					xTimerStop(handle_rtc_timer, portMAX_DELAY);
+				}
+				else{
+					xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
+				}
+				currState = sMainMenu;
 				break;
 			default:
 				xQueueSendToBack(q_print, &msg_rtc_invalid, portMAX_DELAY);
